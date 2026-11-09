@@ -120,8 +120,9 @@ resource "aws_lambda_function" "fn" {
   source_code_hash               = data.archive_file.zip.output_base64sha256
   timeout                        = 30
   memory_size                    = 128
-  reserved_concurrent_executions = 5
-  kms_key_arn                    = aws_kms_key.this.arn
+  reserved_concurrent_executions = var.reserved_concurrency
+  #checkov:skip=CKV_AWS_115:New accounts have a 10-concurrency limit and AWS keeps 10 unreserved; set var.reserved_concurrency once the limit is raised
+  kms_key_arn = aws_kms_key.this.arn
 
   environment {
     variables = { ALERT_TOPIC_ARN = aws_sns_topic.alerts.arn, DRY_RUN = tostring(var.dry_run) }

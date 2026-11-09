@@ -3,10 +3,10 @@ import sys
 
 import boto3
 import pytest
-from botocore.stub import Stubber, ANY
+from botocore.stub import ANY, Stubber
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
-import remediate_s3 as r  # noqa: E402
+import remediate_s3 as r
 
 REGION = "us-east-1"
 

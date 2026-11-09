@@ -44,6 +44,19 @@ cd .. && ./demo.sh                                # creates a bucket, opens it, 
 
 Confirm the SNS subscription email. Dashboard link: `terraform output dashboard_url`.
 
+## Evidence
+
+Live run in a dedicated AWS account: `demo.sh` created a bucket and removed its public access block; about a minute later the EventBridge rule had triggered the Lambda and all four block settings were back to `true`, with an SNS email to the team.
+
+![Apply and live remediation demo](docs/img/demo.png)
+
+### What broke on the first deploy, and the fixes
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Demo bucket stayed open; rule `TriggeredRules = 1` but Lambda `Invocations = 0` | `list-targets-by-rule` returned `[]`: the first apply stopped after the Lambda, so targets and invoke permissions were never created | Traced with CloudWatch metrics and a direct `lambda invoke` (which worked), then re-applied |
+| Lambda marked **tainted** | `reserved_concurrent_executions = 5` is rejected on new accounts: the account limit starts at 10 and AWS keeps 10 unreserved | Made reserved concurrency a variable (off by default) with a documented Checkov exception; set it once the limit is raised |
+
 ## Cost
 
 Effectively free at lab volume: Lambda and EventBridge free tiers, a KMS key ($1/month, prorated), SNS email free. `terraform destroy` removes everything.
@@ -51,7 +64,7 @@ Effectively free at lab volume: Lambda and EventBridge free tiers, a KMS key ($1
 ## Security design
 
 - Function role can only `PutBucketPublicAccessBlock` and `GetBucketTagging` on S3, update findings on this account's hub, publish to its own topic, and write its own logs.
-- Reserved concurrency of 5 caps blast radius if something floods the rule.
+- Reserved concurrency (`var.reserved_concurrency`) caps blast radius once the account's Lambda limit allows it; new accounts must leave it unreserved.
 - Everything encrypted with a customer-managed KMS key; DLQ alarm catches silent failures.
 - Checkov: 38 passed, 0 failed; 4 documented skips.
 
