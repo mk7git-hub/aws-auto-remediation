@@ -1,0 +1,9 @@
+infra/build/
+.terraform/
+*.tfstate*
+terraform.tfvars
+__pycache__/
+.pytest_cache/
+
+# private build notes (stay on your PC)
+docs/NOTES.md
